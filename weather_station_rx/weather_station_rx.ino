@@ -29,6 +29,8 @@ float h;          // holds humidity after converting from ASCII to float
 float p;          // holds pressure after converting from ASCII to float
 float dp;         // holds dew point after conversion
 
+int cnt = 1;      // counter for serial tx of dew point
+
 void setup()
 {
   // reciever setup
@@ -41,7 +43,7 @@ void setup()
   Serial.begin(9600);        // for debugging
   
   vw_rx_start();             // start the reciever
-  Serial.println("Radio On...");
+  //Serial.println("Radio On...");
   
   lcd.begin(16,2);           // turn on LCD
 }
@@ -59,11 +61,11 @@ void loop()
   // data is added to buffer
   if (vw_get_message(buf, &buflen))
     {
-      Serial.println("*******************");
-      Serial.println("**** RECEIVING ****");
-      Serial.println("*******************");
+      //Serial.println("*******************");
+      //Serial.println("**** RECEIVING ****");
+      //Serial.println("*******************");
       
-      Serial.print("Loop Count = ");
+      //Serial.print("Loop Count = ");
       
       //turn on receiver LED
       digitalWrite(13,1);
@@ -89,31 +91,43 @@ void loop()
       float recoveredTemp = atof(tBuff);
       // convert c to f
       f = convertTemp(recoveredTemp);
-      Serial.print("Temperature Received - Temp: ");
-      Serial.println(f);
+      //Serial.print("Temperature Received - Temp: ");
+      Serial.print("F");
+      Serial.print(f);
+      Serial.print(",");
+      cnt++;
     }
     else if(first[0] == 'H') {
       memcpy(hBuff,rawBuff+1,buflen-1);
       h = atof(hBuff);
-      Serial.print("Humidity Received - Hum: ");
-      Serial.println(h);
+      //Serial.print("Humidity Received - Hum: ");
+      Serial.print("H");
+      Serial.print(h);
+      Serial.print(",");
+      cnt++;
     }
     else if(first[0] == 'P') {
       memcpy(pBuff,rawBuff+1,buflen-1);
       float recoveredPressure = atof(pBuff);
-      Serial.print("Pressure Received - Press: ");
+      //Serial.print("Pressure Received - Press: ");
       // convert from hPa to inHg
       // .14 is for attitude correction
       // based on actual pressure at wunderground
       p = (recoveredPressure * .030) - .14;
-      Serial.println(p);
+      Serial.print("P");
+      Serial.print(p);
+      Serial.print(",");
     }
-    
-    // if we have temperature and humidity then calculate dew point
-    if(f > 0 && h > 0) {
+
+    // if we have temperature and humidity
+    // and our count is 3 which means temp and hum are done
+    // then calculate dew point
+    if(f > 0 && h > 0 && cnt == 3) {
       dp = doDewPoint(f, h);
-      Serial.print("Dew Point: ");
-      Serial.println(dp);
+      Serial.print("D");
+      Serial.print(dp);
+      Serial.print(",");
+      cnt = 1; // reset counter to 1
     }
     
     //wait 50mS for work to get done  
@@ -140,11 +154,11 @@ void loop()
     lcd.setCursor(11,1);
     lcd.print(p);
   } else {
-    Serial.println("Nothing!!");
+    //Serial.println("Nothing!!");
   }
       
-  Serial.println("-----");
-  loops++;
+  //Serial.println("-----");
+  //loops++;
 }
 
 // function to convert celcius to fahrenheit
